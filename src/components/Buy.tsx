@@ -10,7 +10,7 @@ const Buy = () => {
         const appId = localStorage.getItem('app_id');
         const accessTokenRow = document.cookie.split('; ').find(row => row.startsWith('access_token'));
         const accessToken = accessTokenRow && accessTokenRow.split('=')[1];
-        await axios.post('https://fs191x.buildship.run/dtrader-next/buy', {
+        await axios.put('https://fs191x.buildship.run/dtrader-next/buy', {
             contract_id: contractId,
             price,
             account_id: accountId,
