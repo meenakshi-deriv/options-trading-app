@@ -39,7 +39,7 @@ function Trading() {
         }
       });
       if (response.data.length > 0) {
-        setSellData(prev => ({ ...prev, buy_id: response.data[0].buy_id }));
+        setSellData(prev => ({ ...prev, buy_id: response.data.result[0].buy_id }));
       }
     } catch (error) {
       console.error('Failed to fetch open positions:', error);
@@ -54,7 +54,7 @@ function Trading() {
   const handleBuy = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('https://fs191x.buildship.run/dtrader-next/buy', {
+      await axios.put('https://fs191x.buildship.run/dtrader-next/buy', {
         ...buyData,
         account_id: localStorage.getItem('account_id'),
         app_id: localStorage.getItem('app_id')
@@ -73,7 +73,7 @@ function Trading() {
   const handleSell = async (e) => {
     e.preventDefault();
     try {
-      await axios.post('https://fs191x.buildship.run/dtrader-next/sell', {
+      await axios.put('https://fs191x.buildship.run/dtrader-next/sell', {
         ...sellData,
         app_id: localStorage.getItem('app_id')
       }, {
