@@ -10,13 +10,13 @@ import {
     CircularProgress
 } from '@mui/material';
 
-const Deposit = () => {
+const Withdrawal = () => {
     const [amount, setAmount] = useState('');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState('');
     const [error, setError] = useState('');
 
-    const handleDeposit = async () => {
+    const handleWithdrawal = async () => {
         if (!amount || parseFloat(amount) <= 0) {
             setError('Please enter a valid amount');
             return;
@@ -31,18 +31,18 @@ const Deposit = () => {
             const championTokenRow = document.cookie.split('; ').find(row => row.startsWith('champion_token'));
             const championToken = championTokenRow && championTokenRow.split('=')[1];
             
-            await axios.post('https://fs191x.buildship.run/dtrader-next/deposit', {
+            await axios.post('https://fs191x.buildship.run/dtrader-next/withdrawal', {
                 amount: parseFloat(amount),
                 currency
             }, {
                 headers: { 'Authorization': championToken }
             });
 
-            setSuccess(`Successfully deposited ${amount} ${currency}`);
+            setSuccess(`Successfully withdrawn ${amount} ${currency}`);
             setAmount(''); // Clear the input after success
         } catch (err) {
-            setError('Failed to process deposit. Please try again.');
-            console.error('Deposit error:', err);
+            setError('Failed to process withdrawal. Please try again.');
+            console.error('Withdrawal error:', err);
         } finally {
             setLoading(false);
         }
@@ -51,7 +51,7 @@ const Deposit = () => {
     return (
         <Paper elevation={3} sx={{ p: 3, maxWidth: 400, mx: 'auto', mt: 4 }}>
             <Typography variant="h5" component="h2" sx={{ mb: 3, color: 'primary.main' }}>
-                Deposit Funds
+                Withdraw Funds
             </Typography>
 
             {success && (
@@ -66,7 +66,7 @@ const Deposit = () => {
                 </Alert>
             )}
 
-            <Box component="form" onSubmit={(e) => { e.preventDefault(); handleDeposit(); }}>
+            <Box component="form" onSubmit={(e) => { e.preventDefault(); handleWithdrawal(); }}>
                 <TextField
                     fullWidth
                     label="Amount"
@@ -84,19 +84,19 @@ const Deposit = () => {
                 <Button
                     fullWidth
                     variant="contained"
-                    onClick={handleDeposit}
+                    onClick={handleWithdrawal}
                     disabled={loading}
                     sx={{
                         height: 48,
-                        bgcolor: 'success.main',
-                        '&:hover': { bgcolor: 'success.dark' }
+                        bgcolor: 'error.main',
+                        '&:hover': { bgcolor: 'error.dark' }
                     }}
                 >
-                    {loading ? <CircularProgress size={24} /> : 'Deposit'}
+                    {loading ? <CircularProgress size={24} /> : 'Withdraw'}
                 </Button>
             </Box>
         </Paper>
     );
 };
 
-export default Deposit;
+export default Withdrawal;
