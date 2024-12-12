@@ -262,7 +262,7 @@ function Account() {
                         color: statement.type === 'deposit' ? 'success.main' : 'error.main',
                         fontWeight: 'bold'
                       }}>
-                        {statement.type === 'deposit' ? '+' : '-'}{statement.amount}
+                        {statement.amount}
                       </TableCell>
                       <TableCell>{new Date(statement.timestamp).toLocaleString()}</TableCell>
                     </TableRow>
