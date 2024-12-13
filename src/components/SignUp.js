@@ -31,10 +31,11 @@ function SignUp() {
       });
 
       if (response.data ) {
-        localStorage.setItem('user_id', response.data.output.user_id);
+        console.log("response",response.data);
+        localStorage.setItem('user_id', response.data.output[0].UID);
         localStorage.setItem('currency', formData.currency);
         localStorage.setItem('app_id', formData.app_id);
-        navigate('/signin');
+       navigate('/signin');
       } else {
         console.error('Unexpected response format', response.data);
       }
