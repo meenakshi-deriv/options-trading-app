@@ -24,19 +24,16 @@ function SignUp() {
     const token = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEwMDAsImFwcF9pZCI6MTAwMCwiaWF0IjoxNzMzMzc2ODMxLCJleHAiOjE3NjQ5MTI4MjJ9.dobQ9wKzr9tSYuks6FbAxdgTSXx0BOEkKT8WuIQT1JYe0isj5WFTOFpLdYAbhV1tcXthbHHNz8Bk9AiHd0xhoAx49Jqi0BYejoXcIdsBQdFGLuaHgd4IZk2vM4M_McxChqNFFwktjKRswWnAYjFzHl-Fl6sy8Qb9Xt-CTJje8TD7lpmkGMyrAqTcXyUFDBg4-xQM66O0xxV4zn7v0RWmlF4S5JXtyXS0kEFSrgbwinrZ2fpEbDoLSGzz2-_yQO-TSSW9BYPRB077bWZcX0POREumH0ry-bDekwiXOrHKdHoAmmslpqev4-XONLJfXiBZszWdu9WLpgW4r-HTAD22SQ';
 
     try {
-      console.log("response before", formData);
       const response = await axios.post('https://fs191x.buildship.run/dtrader-next/signup', formData, {
         headers: {
           Authorization: `Bearer ${token}`, // Add the bearer token here
         },
       });
-      console.log("response after", response.data);
 
       if (response.data ) {
         localStorage.setItem('user_id', response.data.output.user_id);
         localStorage.setItem('currency', formData.currency);
         localStorage.setItem('app_id', formData.app_id);
-        console.log("response", response.data);
         navigate('/signin');
       } else {
         console.error('Unexpected response format', response.data);
