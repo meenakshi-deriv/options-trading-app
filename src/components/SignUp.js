@@ -32,7 +32,7 @@ function SignUp() {
       });
       console.log("response after", response.data);
 
-      if (response.data && response.data.output.user_id) {
+      if (response.data ) {
         localStorage.setItem('user_id', response.data.output.user_id);
         localStorage.setItem('currency', formData.currency);
         localStorage.setItem('app_id', formData.app_id);
