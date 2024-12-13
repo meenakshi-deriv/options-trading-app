@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/options-trading-app/static/js/main.c75af23a.js",
+    "main.js": "/options-trading-app/static/js/main.6193ab3e.js",
     "index.html": "/options-trading-app/index.html",
-    "main.c75af23a.js.map": "/options-trading-app/static/js/main.c75af23a.js.map"
+    "main.6193ab3e.js.map": "/options-trading-app/static/js/main.6193ab3e.js.map"
   },
   "entrypoints": [
-    "static/js/main.c75af23a.js"
+    "static/js/main.6193ab3e.js"
   ]
 }
