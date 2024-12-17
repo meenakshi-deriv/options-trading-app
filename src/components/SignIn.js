@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { TextField, Button, Container, Typography, Box } from '@mui/material';
+import { 
+  TextField, 
+  Button, 
+  Container, 
+  Typography, 
+  Box,
+  Alert
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Cookies from 'js-cookie';
@@ -10,6 +17,7 @@ function SignIn() {
     email: '',
     password: '',
   });
+  const [error, setError] = useState('');
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -17,16 +25,30 @@ function SignIn() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      // Sign in
       const app_id = localStorage.getItem('app_id');
+      
+      // Sign in and get accounts
       const signInResponse = await axios.post('https://fs191x.buildship.run/dtrader-next/session', {
         ...formData,
         app_id
       });
-  
+
+      console.log('Sign in response:', signInResponse.data); // Debug log
+
+      // Store tokens
       Cookies.set('access_token', signInResponse.data.output.access_token);
       Cookies.set('refresh_token', signInResponse.data.output.refresh_token);
+
+      // Store accounts in localStorage for account selection
+      if (signInResponse.data.output && signInResponse.data.output.accounts) {
+        localStorage.setItem('available_accounts', JSON.stringify(signInResponse.data.output.accounts));
+      } else {
+        console.error('No accounts found in response');
+        setError('No accounts found for this user');
+        return;
+      }
 
       // Get champion token
       const championResponse = await axios.post('https://fs191x.buildship.run/dtrader-next/champion-token', {
@@ -36,11 +58,12 @@ function SignIn() {
       });
 
       Cookies.set('champion_token', championResponse.data.output.champion_token);
-      localStorage.setItem('account_id', championResponse.data.output.account_id);
 
+      // Navigate to account page for account selection
       navigate('/account');
     } catch (error) {
-      console.error('Sign in failed:', error);
+      console.error('Sign in error:', error.response?.data || error); // Debug log
+      setError('Sign in failed. Please try again.');
     }
   };
 
@@ -54,10 +77,17 @@ function SignIn() {
           alignItems: 'center',
         }}
       >
-        <Typography component="h1" variant="h5">
+        <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
           Sign In
         </Typography>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+
+        {error && (
+          <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, width: '100%' }}>
           <TextField
             margin="normal"
             required

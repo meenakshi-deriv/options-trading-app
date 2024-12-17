@@ -26,6 +26,41 @@ function Account() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const [availableAccounts, setAvailableAccounts] = useState([]);
+  const [selectedAccount, setSelectedAccount] = useState(null);
+
+  useEffect(() => {
+    // Load available accounts from localStorage
+    try {
+      const accountsData = localStorage.getItem('available_accounts');
+      if (accountsData) {
+        const accounts = JSON.parse(accountsData);
+        console.log('Loaded accounts:', accounts); // Debug log
+        setAvailableAccounts(accounts);
+        
+        // If account_id is already set, use it
+        const currentAccountId = localStorage.getItem('account_id');
+        if (currentAccountId) {
+          const account = accounts.find(acc => acc.account_id === parseInt(currentAccountId));
+          if (account) {
+            setSelectedAccount(account);
+          }
+        }
+      } else {
+        console.error('No accounts data found in localStorage');
+      }
+    } catch (error) {
+      console.error('Error loading accounts:', error);
+    }
+  }, []);
+
+  const handleAccountSelect = (account) => {
+    setSelectedAccount(account);
+    localStorage.setItem('account_id', account.account_id.toString());
+    localStorage.setItem('currency', account.currency);
+    fetchBalance();
+    fetchStatements();
+  };
 
   const fetchBalance = async () => {
     try {
@@ -60,9 +95,11 @@ function Account() {
   };
 
   useEffect(() => {
-    fetchBalance();
-    fetchStatements();
-  }, []);
+    if (selectedAccount) {
+      fetchBalance();
+      fetchStatements();
+    }
+  }, [selectedAccount]);
 
   const handleDeposit = async (e) => {
     e.preventDefault();
@@ -70,26 +107,33 @@ function Account() {
       setError('Please enter a valid amount');
       return;
     }
+    if (!selectedAccount) {
+      setError('Please select an account first');
+      return;
+    }
 
     setLoading(true);
     setError('');
     setSuccess('');
     try {
+      const app_id = localStorage.getItem('app_id');
       await axios.post('https://fs191x.buildship.run/dtrader-next/deposit', {
         amount: parseFloat(amount),
-        currency: localStorage.getItem('currency')
+        currency: selectedAccount.currency,
+        account_id: selectedAccount.account_id,
+        app_id
       }, {
         headers: {
           Authorization: Cookies.get('champion_token')
         }
       });
-      setSuccess(`Successfully deposited ${amount} ${localStorage.getItem('currency')}`);
+      setSuccess(`Successfully deposited ${amount} ${selectedAccount.currency}`);
       setAmount('');
       fetchBalance();
       fetchStatements();
     } catch (error) {
-      setError('Deposit failed. Please try again.');
-      console.error('Deposit failed:', error);
+      console.error('Deposit failed:', error.response?.data || error);
+      setError(error.response?.data?.message || 'Deposit failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -105,26 +149,33 @@ function Account() {
       setError('Insufficient balance');
       return;
     }
+    if (!selectedAccount) {
+      setError('Please select an account first');
+      return;
+    }
 
     setLoading(true);
     setError('');
     setSuccess('');
     try {
+      const app_id = localStorage.getItem('app_id');
       await axios.post('https://fs191x.buildship.run/dtrader-next/withdraw', {
         amount: parseFloat(amount),
-        currency: localStorage.getItem('currency')
+        currency: selectedAccount.currency,
+        account_id: selectedAccount.account_id,
+        app_id
       }, {
         headers: {
           Authorization: Cookies.get('champion_token')
         }
       });
-      setSuccess(`Successfully withdrawn ${amount} ${localStorage.getItem('currency')}`);
+      setSuccess(`Successfully withdrawn ${amount} ${selectedAccount.currency}`);
       setAmount('');
       fetchBalance();
       fetchStatements();
     } catch (error) {
-      setError('Withdrawal failed. Please try again.');
-      console.error('Withdraw failed:', error);
+      console.error('Withdrawal failed:', error.response?.data || error);
+      setError(error.response?.data?.message || 'Withdrawal failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -159,119 +210,143 @@ function Account() {
           </Alert>
         )}
 
-        <Paper elevation={3} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
-          <Typography variant="h4" sx={{ color: '#1976d2', display: 'flex', alignItems: 'center' }}>
-            Balance: <Box component="span" sx={{ ml: 2, color: 'success.main', fontWeight: 'bold' }}>
-              {balance} {localStorage.getItem('currency')}
-            </Box>
+        <Paper sx={{ mb: 4, p: 3 }}>
+          <Typography variant="h5" sx={{ mb: 3 }}>
+            Select Account
           </Typography>
-        </Paper>
-
-        <Paper elevation={3} sx={{ borderRadius: 2 }}>
-          <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-            <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
-              <Tab label="Deposit" />
-              <Tab label="Withdraw" />
-              <Tab label="Statement" />
-            </Tabs>
+          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+            {availableAccounts.map((account) => (
+              <Button
+                key={account.account_id}
+                variant={selectedAccount?.account_id === account.account_id ? "contained" : "outlined"}
+                onClick={() => handleAccountSelect(account)}
+                startIcon={<AccountBalance />}
+                sx={{ minWidth: '150px' }}
+              >
+                {account.currency}
+              </Button>
+            ))}
           </Box>
-
-          <TabPanel value={tabValue} index={0}>
-            <Box component="form" onSubmit={handleDeposit} sx={{ maxWidth: 400, mx: 'auto' }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="amount"
-                label="Amount"
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                disabled={loading}
-                InputProps={{
-                  startAdornment: <Typography sx={{ mr: 1 }}>{localStorage.getItem('currency')}</Typography>
-                }}
-              />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loading}
-                sx={{
-                  mt: 2,
-                  height: 48,
-                  bgcolor: 'success.main',
-                  '&:hover': { bgcolor: 'success.dark' }
-                }}
-              >
-                {loading ? <CircularProgress size={24} /> : 'Deposit'}
-              </Button>
-            </Box>
-          </TabPanel>
-
-          <TabPanel value={tabValue} index={1}>
-            <Box component="form" onSubmit={handleWithdraw} sx={{ maxWidth: 400, mx: 'auto' }}>
-              <TextField
-                margin="normal"
-                required
-                fullWidth
-                name="amount"
-                label="Amount"
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                disabled={loading}
-                InputProps={{
-                  startAdornment: <Typography sx={{ mr: 1 }}>{localStorage.getItem('currency')}</Typography>
-                }}
-              />
-              <Button
-                type="submit"
-                fullWidth
-                variant="contained"
-                disabled={loading}
-                sx={{
-                  mt: 2,
-                  height: 48,
-                  bgcolor: 'error.main',
-                  '&:hover': { bgcolor: 'error.dark' }
-                }}
-              >
-                {loading ? <CircularProgress size={24} /> : 'Withdraw'}
-              </Button>
-            </Box>
-          </TabPanel>
-
-          <TabPanel value={tabValue} index={2}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell>ID</TableCell>
-                    <TableCell>Type</TableCell>
-                    <TableCell>Amount</TableCell>
-                    <TableCell>Timestamp</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {statements.map((statement) => (
-                    <TableRow key={statement.id} hover>
-                      <TableCell>{statement.id}</TableCell>
-                      <TableCell>{statement.type}</TableCell>
-                      <TableCell sx={{ 
-                        color: statement.type === 'deposit' ? 'success.main' : 'error.main',
-                        fontWeight: 'bold'
-                      }}>
-                        {statement.amount}
-                      </TableCell>
-                      <TableCell>{new Date(statement.timestamp).toLocaleString()}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </TabPanel>
+          {selectedAccount && (
+            <Typography variant="h6" sx={{ color: 'primary.main' }}>
+              Current Balance: {balance} {selectedAccount.currency}
+            </Typography>
+          )}
         </Paper>
+
+        {selectedAccount ? (
+          <>
+            <Paper elevation={3} sx={{ borderRadius: 2 }}>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+                  <Tab label="Deposit" />
+                  <Tab label="Withdraw" />
+                  <Tab label="Statement" />
+                </Tabs>
+              </Box>
+
+              <TabPanel value={tabValue} index={0}>
+                <Box component="form" onSubmit={handleDeposit} sx={{ maxWidth: 400, mx: 'auto' }}>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="amount"
+                    label="Amount"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    disabled={loading}
+                    InputProps={{
+                      startAdornment: <Typography sx={{ mr: 1 }}>{selectedAccount.currency}</Typography>
+                    }}
+                  />
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    disabled={loading}
+                    sx={{
+                      mt: 2,
+                      height: 48,
+                      bgcolor: 'success.main',
+                      '&:hover': { bgcolor: 'success.dark' }
+                    }}
+                  >
+                    {loading ? <CircularProgress size={24} /> : 'Deposit'}
+                  </Button>
+                </Box>
+              </TabPanel>
+
+              <TabPanel value={tabValue} index={1}>
+                <Box component="form" onSubmit={handleWithdraw} sx={{ maxWidth: 400, mx: 'auto' }}>
+                  <TextField
+                    margin="normal"
+                    required
+                    fullWidth
+                    name="amount"
+                    label="Amount"
+                    type="number"
+                    value={amount}
+                    onChange={(e) => setAmount(e.target.value)}
+                    disabled={loading}
+                    InputProps={{
+                      startAdornment: <Typography sx={{ mr: 1 }}>{selectedAccount.currency}</Typography>
+                    }}
+                  />
+                  <Button
+                    type="submit"
+                    fullWidth
+                    variant="contained"
+                    disabled={loading}
+                    sx={{
+                      mt: 2,
+                      height: 48,
+                      bgcolor: 'error.main',
+                      '&:hover': { bgcolor: 'error.dark' }
+                    }}
+                  >
+                    {loading ? <CircularProgress size={24} /> : 'Withdraw'}
+                  </Button>
+                </Box>
+              </TabPanel>
+
+              <TabPanel value={tabValue} index={2}>
+                <TableContainer>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>ID</TableCell>
+                        <TableCell>Type</TableCell>
+                        <TableCell>Amount</TableCell>
+                        <TableCell>Timestamp</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {statements.map((statement) => (
+                        <TableRow key={statement.id} hover>
+                          <TableCell>{statement.id}</TableCell>
+                          <TableCell>{statement.type}</TableCell>
+                          <TableCell sx={{ 
+                            color: statement.type === 'deposit' ? 'success.main' : 'error.main',
+                            fontWeight: 'bold'
+                          }}>
+                            {statement.amount}
+                          </TableCell>
+                          <TableCell>{new Date(statement.timestamp).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              </TabPanel>
+            </Paper>
+          </>
+        ) : (
+          <Alert severity="info">
+            Please select an account to view details and perform transactions
+          </Alert>
+        )}
       </Container>
     </Box>
   );
